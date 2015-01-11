@@ -1,6 +1,6 @@
 // NI FastPaste - program to quickly insert predefined text strings
 
-// Copyright (C) 2002-2015 - Nikolai Ivanov
+// Copyright (C) 2002-2015 - Nikolai Ivanov  (http://www.kivlab.com/)
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License

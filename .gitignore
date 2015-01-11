@@ -41,3 +41,25 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+#Delphi Files, exe, chm
+__history
+Release
+Debug
+*.~ddp
+*.~dfm
+*.~dpr
+*.~pas
+*.7z
+*.dcu
+*.ddp
+*.exe
+*.dll
+*.ini
+*.wav
+*.bak
+*.cfg
+*.chm
+*.ico
+*.identcache
+*.local
