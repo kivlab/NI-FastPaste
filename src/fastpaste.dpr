@@ -5,6 +5,7 @@ uses
   Unit1 in 'Unit1.pas' {Form1};
 
 {$R *.res}
+{$R *.dkl_const.res}
 
 begin
   Application.Initialize;

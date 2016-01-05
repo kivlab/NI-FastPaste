@@ -1,6 +1,6 @@
 // NI FastPaste - program to quickly insert predefined text strings
 
-// Copyright (C) 2002-2015 - Nikolai Ivanov  (http://www.kivlab.com/)
+// Copyright (C) 2002-2015 - Nikolai Ivanov
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, AppEvnts, ExtCtrls, Menus, ComCtrls, ToolWin, StdCtrls,
-  ImgList, ActiveX, ShlObj, IniFiles, ShellApi, clipbrd, Registry;
+  ImgList, ActiveX, ShlObj, IniFiles, ShellApi, clipbrd, Registry, DKLang;
 
 type
   TForm1 = class(TForm)
@@ -48,6 +48,10 @@ type
     ImageList3: TImageList;
     GroupBox1: TGroupBox;
     Method: TComboBox;
+    dklcMain: TDKLanguageController;
+    N6: TMenuItem;
+    mLanguage: TMenuItem;
+    Donate1: TMenuItem;
     procedure mSettingsClick(Sender: TObject);
     procedure mExitClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -60,6 +64,8 @@ type
     procedure N3Click(Sender: TObject);
     procedure N4Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure Donate1Click(Sender: TObject);
+    procedure UpdateStateNotify(Sender: TObject);
   private
     { Private declarations }
     procedure HideForm;
@@ -71,6 +77,11 @@ type
     procedure UnRegisterHotKeys;
     procedure OnHotKey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure WMQueryEndSession(var Msg: TWMQueryEndSession); message WM_QUERYENDSESSION;
+    // Updates form interface
+    procedure UpdateState;
+    // Language item click handler
+    procedure LanguageItemClick(Sender: TObject);
+
   public
     { Public declarations }
     procedure LoadSettings;
@@ -78,7 +89,7 @@ type
     procedure ClearSettings;
     procedure PasteInFocus(const s: string; const methd: integer);
     procedure PostKeyEx32(key: Word; const shift: TShiftState; specialkey: Boolean);
-    // сообщения
+    // messages
     procedure ShowMessage(Msg: string);
     procedure ShowError(Msg: string);
     function ShowConfirm(Msg: string): Boolean;
@@ -92,12 +103,12 @@ const
 
 var
   Form1: TForm1;
-  closeapp: Boolean = false; // идет закрытие прораммы
-  dataloading: Boolean = false; // идет загрузка данных
-  // папка программы и папка данных программы, путь к ini-файлу
+  closeapp: Boolean = false; // closing app
+  dataloading: Boolean = false; // loading data
+  // some dirs
   AppDir, AppData, IniF: string;
-  PAutoStart: Boolean; // значение при старте программы
-  MyHotKeys: array [1 .. reccnt] of integer; // горячие кнопки
+  PAutoStart: Boolean; // auto start
+  MyHotKeys: array [1 .. reccnt] of integer; // hotkeys
   gb: array [1 .. reccnt] of TGroupBox;
   ed: array [1 .. reccnt] of TEdit;
   lb: array [1 .. reccnt] of TLabel;
@@ -107,8 +118,8 @@ implementation
 
 {$R *.dfm}
 
-// сообщения
-procedure TForm1.ShowMessage(Msg: string); // информационная мессага
+// messages
+procedure TForm1.ShowMessage(Msg: string); // info
 begin
   try
     MessageBox(0, PChar(Msg), PChar(Form1.Caption), MB_OK + MB_ICONINFORMATION)
@@ -116,7 +127,7 @@ begin
   end;
 end;
 
-procedure TForm1.ShowError(Msg: string); // мессага с ошибкой
+procedure TForm1.ShowError(Msg: string); // error
 begin
   try
     MessageBox(0, PChar(Msg), PChar(Form1.Caption), MB_OK + MB_ICONERROR)
@@ -124,7 +135,7 @@ begin
   end;
 end;
 
-function TForm1.ShowConfirm(Msg: string): Boolean; // подтверждение
+function TForm1.ShowConfirm(Msg: string): Boolean; // confirm
 begin
   Result := false;
   try
@@ -138,7 +149,7 @@ begin
 end;
 
 function TForm1.ShowConfirmYNC(Msg: string): byte;
-// подтверждение Да(1) Нет(0) Отмена(2)
+// confirm Yes / No / Cancel
 begin
   Result := 2;
   try
@@ -155,7 +166,7 @@ begin
   end;
 end;
 
-// версия нач
+// version - begin
 function GetVersion(const FileName: String = '';
   const Fmt: String = '%d.%d.%d.%d'): String;
 var
@@ -215,14 +226,69 @@ begin
     Result := v
   end;
 end;
-// версия кон
+// version end
+
+// lang begin
+procedure TForm1.UpdateState;
+const
+  awsModified: Array[Boolean] of UnicodeString = ('', '*');
+  //---
+  procedure UpdateLanguageMark;
+  var
+    i: Integer;
+    CurLang: LANGID; // To avoid excess synch calls
+  begin
+    CurLang := LangManager.LanguageID;
+    for i := 0 to mLanguage.Count-1 do
+      with mLanguage[i] do Checked := Tag=CurLang;
+    // groupboxes & labels
+    for i := 1 to reccnt do
+    begin
+      gb[i].Caption := DKLangConstW('Sstring') + ' ' + IntToStr(i);
+	    lb[i].Caption := DKLangConstW('Shotkey') + ':';
+    end;
+  end;
+  //---
+begin
+  // Update language menu
+  UpdateLanguageMark;
+  Method.ItemIndex := Method.Tag;
+end;
+
+procedure TForm1.UpdateStateNotify(Sender: TObject);
+begin
+  UpdateState;
+end;
+
+procedure TForm1.LanguageItemClick(Sender: TObject);
+  //--
+  procedure SaveLang;
+    var
+      ini: TMemIniFile;
+  begin
+    ini := TMemIniFile.Create(IniF, TEncoding.UTF8);
+    try
+      ini.WriteInteger('Params', 'LanguageID', LangManager.LanguageID);
+    finally
+      ini.UpdateFile;
+      ini.Free
+    end;
+  end;
+  //--
+begin
+  Method.Tag := Method.ItemIndex;
+  // We stored language ID in Tag of each menu item (which is Sender here)
+  LangManager.LanguageID := (Sender as TComponent).Tag;
+  UpdateState;
+  SaveLang;
+end;
+// lang end
 
 function TForm1.GetSpecFolder(nFolder: integer): string;
 var
   Allocator: IMalloc;
   SpecialDir: PItemIdList;
   FBuf: array [0 .. MAX_PATH] of char;
-  // PerDir: string;
 begin
   Result := '';
   try
@@ -262,9 +328,14 @@ begin
     on e: exception do
     begin
       dataloading := false;
-      raise exception.Create('Ошибка при очистке данных:' + #13 + e.Message);
+      raise exception.Create(DKLangConstW('Serclear') + ':' + #13 + e.Message);
     end;
   end;
+end;
+
+procedure TForm1.Donate1Click(Sender: TObject);
+begin
+  ShellExecute(0, nil, 'http://www.kivlab.com/donate/', nil, nil, 1);
 end;
 
 procedure TForm1.Edit1Change(Sender: TObject);
@@ -280,10 +351,10 @@ var
   Reg: TRegistry;
   progpath: string;
 begin
-  { создание/удаление ключа автостарта }
+  { create/del autostart key }
   try
     if N5.Checked <> PAutoStart then
-    begin { * } { Если значение CheckBox'а при выходе не равно его значению при старте - меняем соотв. инфу в реестре }
+    begin { * } { save info into registry }
       progpath := Application.ExeName + ' /t';
       Reg := TRegistry.Create;
       try
@@ -292,11 +363,11 @@ begin
         begin
           try
             if N5.Checked then
-            begin { создаем ключ }
+            begin { create key }
               Reg.WriteString(RegV, progpath);
             end
             else
-            begin { удаляем ключ }
+            begin { delete key }
               if Reg.ValueExists(RegV) then
                 Reg.DeleteValue(RegV);
             end;
@@ -316,7 +387,7 @@ end;
 procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   if ToolButton2.Enabled then
-    if ShowConfirm('Сохранить изменения?') then
+    if ShowConfirm(DKLangConstW('Ssavchan')) then
       try
         SaveSettings;
       except
@@ -343,6 +414,19 @@ var
   Reg: TRegistry;
   i: integer;
   s: string;
+  // lang begin
+  procedure CreateLanguageMenu;
+    var
+      i: Integer;
+      mi: TMenuItem;
+  begin
+    for i := 0 to LangManager.LanguageCount-1 do begin
+      mi := NewItem(LangManager.LanguageNames[i], 0, False, True, LanguageItemClick, 0, '');
+      mi.Tag := LangManager.LanguageIDs[i];
+      mLanguage.Add(mi);
+    end;
+  end;
+  // lang end
 begin
   HideForm;
   try
@@ -356,7 +440,17 @@ begin
         AppData := AppDir;
   except
   end;
-  { автозапуск программы - проверка }
+  // lang begin
+  try
+    // Scan for language files in the app directory and register them in the LangManager object
+    LangManager.ScanForLangFiles(ExtractFileDir(ParamStr(0)), '*.lng', False);
+     // Create available languages menu
+    CreateLanguageMenu;
+     // Update interface elements
+    UpdateState;
+  except end;
+  // lang end
+  { autostart - check }
   try
     PAutoStart := false;
     Reg := TRegistry.Create;
@@ -382,13 +476,13 @@ begin
   end;
   IniF := AppData + 'fastpaste.ini';
   Form1.Caption := 'NI FastPaste ' + FileVersion;
-  // динамически создаем компоненты
+  // dynamically created components
   for i := 1 to reccnt do
   begin
     s := IntToStr(i);
     // groupbox
     gb[i] := TGroupBox.Create(ScrollBox1);
-    gb[i].Caption := 'Строка ' + s;
+    gb[i].Caption := DKLangConstW('Sstring') + ' ' + s;
     gb[i].Height := 43;
     gb[i].Top := (i - 1) * gb[i].Height + 57;
     gb[i].Width := 630;
@@ -408,7 +502,7 @@ begin
     lb[i].Left := 413;
     lb[i].Top := 18;
     lb[i].Width := 93;
-    lb[i].Caption := 'Горячая клавиша:';
+    lb[i].Caption := DKLangConstW('Shotkey') + ':';
     // hotkey
     hk[i] := THotKey.Create(gb[i]);
     hk[i].Parent := gb[i];
@@ -444,7 +538,8 @@ begin
   try
     i:=ini.ReadInteger('Settings', 'Method', 3);
     if (i < 0) or (i > Method.Items.Count) then i:=3;
-    Method.ItemIndex:=i;
+    Method.ItemIndex := i;
+    Method.Tag := i;
     for i := 1 to reccnt do
     begin
       s := IntToStr(i);
@@ -453,6 +548,9 @@ begin
       if hk[i] <> nil then
         hk[i].HotKey := ini.ReadInteger('String' + s, 'Hotkey', 0);
     end;
+    // LanguageID
+    LangManager.LanguageID := ini.ReadInteger('Params', 'LanguageID', LangManager.LanguageID);
+    UpdateState;
   finally
     dataloading := false;
     SetControls();
@@ -471,14 +569,13 @@ var
   s: string;
 begin
   s := 'NI FastPaste ' + FileVersion + ' [Freeware]' + #13 + #13 +
-    'Программа для быстрой вставки заранее подготовленных строк текста (максимум '
-    + IntToStr(reccnt) +
-    ' строк) в буфер обмена и активное поле ввода различных программ при помощи глобальных горячих клавиш. Если вставка в активное поле ввода не срабатывает, попробуйте изменить в настройках программы метод вставки. '
-    + 'Текстовые строки и горячие клавиши для их вставки должны быть заданы в параметрах "NI FastPaste".   '
-    + #13 + #13 + 'Web: http://www.kivlab.com' + #13 + #13 +
-    'Файл настроек программы:' + #13 + IniF + #13 + #13 +
-    '© Николай Иванов, 2002-2015. Все права защищены. ';
-  ShowMessage(s);
+    DKLangConstW('Spinfo1') + #13 + DKLangConstW('Spinfo2') + #13 + DKLangConstW('Spinfo3') + '   '
+    + #13#13 + 'Web: http://www.kivlab.com' + #13#13 +
+    DKLangConstW('Spinfo4') + ':' + #13 + IniF + #13#13 +
+    'Copyright © 2002-2015 by Nikolay Ivanov. ' + #13#13 +
+    'Third Party Components:' + #13 +
+    '- DKLang Localization Package (http://www.dk-soft.org/)';
+  ShowMessage(Format(s, [reccnt]));
 end;
 
 procedure TForm1.N4Click(Sender: TObject);
@@ -520,15 +617,15 @@ begin
     ah := vGuiInfo.hwndFocus;
     if ah > 0 then
       case methd of
-        0:  //посимвольно
+        0:  // character by character
             for i := 1 to length(s) do
             begin
               SendMessage(ah, WM_CHAR, ord(s[i]), 0);
               Application.ProcessMessages;
             end;
-        1:  //строка целиком
+        1:  // the whole line
             SendMessage(ah, WM_SETTEXT, 0, lparam(LPCTSTR(s)));
-        2:  //через буфер
+        2:  // using the Clipboard
             sendmessage(ah,WM_PASTE,0,0);
       end;
   end;
@@ -629,9 +726,9 @@ begin
         k := hk[i].HotKey;
       if k = 0 then
         Continue;
-      // получение уникального идентификатора для комбинации клавиш
+      // obtaining a unique identifier for shortcuts
       MyHotKeys[i] := GlobalAddAtom(PWideChar('NIHotKey' + s));
-      // регистрация комбинации горячих клавиш
+      // registration of hotkeys
       ShortCutToHotKey(hk[i].HotKey, k, m);
       RegisterHotKey(handle, MyHotKeys[i], m, k);
     except
@@ -661,6 +758,8 @@ begin
       if hk[i] <> nil then
         ini.WriteInteger('String' + s, 'Hotkey', hk[i].HotKey);
     end;
+    // LanguageID
+    ini.WriteInteger('Params', 'LanguageID', LangManager.LanguageID);
   finally
     ini.UpdateFile;
     SetControls();
@@ -683,7 +782,7 @@ end;
 
 procedure TForm1.ToolButton1Click(Sender: TObject);
 begin
-  if ShowConfirm('Очистить введенные данные?') then
+  if ShowConfirm(DKLangConstW('Sconfclear')) then
     ClearSettings;
 end;
 
@@ -694,7 +793,7 @@ end;
 
 procedure TForm1.ToolButton3Click(Sender: TObject);
 begin
-  if ShowConfirm('Загрузить последнюю сохраненную копию?') then
+  if ShowConfirm(DKLangConstW('Sconfload')) then
     LoadSettings;
 end;
 
@@ -704,15 +803,15 @@ var
 begin
   for i := 1 to reccnt do
     try
-      // удаляем комбинацию
+      // unreg hotkey
       UnRegisterHotKey(handle, MyHotKeys[i]);
-      // удаляем атом
+      // del atom
       GlobalDeleteAtom(MyHotKeys[i]);
     except
     end;
 end;
 
-//корректный выход из программы
+// exit from app
 procedure TForm1.WMQueryEndSession(var Msg: TWMQueryEndSession);
 begin
 try
