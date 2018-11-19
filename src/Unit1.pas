@@ -1,6 +1,6 @@
 // NI FastPaste - program to quickly insert predefined text strings
 
-// Copyright (C) 2002-2015 - Nikolai Ivanov
+// Copyright (C) 2002-2018 - Nikolai Ivanov
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,6 +17,9 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 
+// Del dot for portable version
+{.$Define Portable}
+
 unit Unit1;
 
 interface
@@ -24,7 +27,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, AppEvnts, ExtCtrls, Menus, ComCtrls, ToolWin, StdCtrls,
-  ImgList, ActiveX, ShlObj, IniFiles, ShellApi, clipbrd, Registry, DKLang;
+  ImgList, ActiveX, ShlObj, IniFiles, ShellApi, clipbrd, Registry, DKLang,
+  System.ImageList;
 
 type
   TForm1 = class(TForm)
@@ -335,7 +339,7 @@ end;
 
 procedure TForm1.Donate1Click(Sender: TObject);
 begin
-  ShellExecute(0, nil, 'http://www.kivlab.com/donate/', nil, nil, 1);
+  ShellExecute(0, nil, 'https://kivlab.ru/donate/', nil, nil, 1);
 end;
 
 procedure TForm1.Edit1Change(Sender: TObject);
@@ -434,10 +438,14 @@ begin
   except
   end;
   try
+    {$IfDef Portable}
+    AppData := AppDir;
+    {$Else}
     AppData := GetSpecFolder(CSIDL_APPDATA) + '\NI FastPaste\';
     if not DirectoryExists(AppData) then
       if not ForceDirectories(AppData) then
         AppData := AppDir;
+    {$EndIf}
   except
   end;
   // lang begin
@@ -568,11 +576,11 @@ procedure TForm1.N3Click(Sender: TObject);
 var
   s: string;
 begin
-  s := 'NI FastPaste ' + FileVersion + ' [Freeware]' + #13 + #13 +
+  s := 'NI FastPaste '{$IfDef Win64} + '(x64) ' {$EndIf} {$IfDef Portable} + 'Portable ' {$EndIf} + 'v.' + FileVersion + ' [Freeware]' + #13 + #13 +
     DKLangConstW('Spinfo1') + #13 + DKLangConstW('Spinfo2') + #13 + DKLangConstW('Spinfo3') + '   '
-    + #13#13 + 'Web: http://www.kivlab.com' + #13#13 +
+    + #13#13 + 'Web: https://kivlab.ru' + #13#13 +
     DKLangConstW('Spinfo4') + ':' + #13 + IniF + #13#13 +
-    'Copyright © 2002-2015 by Nikolay Ivanov. ' + #13#13 +
+    'Copyright © 2002-2018 by Nikolay Ivanov. ' + #13#13 +
     'Third Party Components:' + #13 +
     '- DKLang Localization Package (http://www.dk-soft.org/)';
   ShowMessage(Format(s, [reccnt]));
@@ -581,7 +589,7 @@ end;
 procedure TForm1.N4Click(Sender: TObject);
 begin
   try
-    ShellExecute(0, nil, 'http://www.kivlab.com', nil, nil, 1);
+    ShellExecute(0, nil, 'https://kivlab.ru', nil, nil, 1);
   except
   end;
 end;

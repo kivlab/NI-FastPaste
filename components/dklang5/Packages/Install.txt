@@ -1,0 +1,44 @@
+==============================================================================
+Installation notes for DKLang Localization Package
+==============================================================================
+written 2013.12.06 (XE5) - bjm
+updated 2014.05.21 (XE6) - bjm
+updated 2014.09.30 (XE7) - bjm
+updated 2016.04.23 (10.1 Berlin) - bjm
+
+There are two packages to install (where XXX represents the lib suffix for the 
+  version you are installing):
+  * dklangXXX.dpk - runtime package 
+  * dcldklangXXX.dpk - design time package
+  
+The runtime package contains the code necessary for your application.
+The design package installs the language controller component, and some 
+  utilities into the IDE.
+    
+==============================================================================
+Installing the packages
+==============================================================================
+
+The packages need to be installed in the correct order because the design time 
+  package depends on the runtime package. The runtime package is the only one 
+  that needs to be built multiple times to support multiple platforms. The 
+  design time package only needs to be built for the IDE platform (win32).
+  
+  * load dklangXXX.dpk and dcldklangXXX.dpk into the IDE
+  * build the runtime package dklangXXX.dpk
+  * build and install the design time package dcldklangXXX.dpk:
+
+==============================================================================
+Setting library paths
+==============================================================================
+Your code will need to be able to find dklang.pas. This can be done by
+  adding library paths to the IDE.
+  
+To add a library path to dklang.pas for each platform:
+  under Tools|Options :
+    Environment Options|Delphi Options|Library
+    for each platform:
+      change "Selected Platform" to the platform
+      add the path to dklang.pas to "Library path"
+      
+      

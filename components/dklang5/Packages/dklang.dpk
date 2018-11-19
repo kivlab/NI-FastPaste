@@ -1,0 +1,62 @@
+package dklang;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'DKLang Localization Package'}
+{$RUNONLY}
+{$IMPLICITBUILD ON}
+
+// Library suffix defines to simplify upgrading to new versions of Delphi
+//   (at least until EMB gives us "{$LIBSUFFIX AUTO}"!)
+
+// XE5
+{$IFDEF VER260}
+{$LIBSUFFIX '190'}
+{$ENDIF}
+
+// XE6
+{$IFDEF VER270}
+{$LIBSUFFIX '200'}
+{$ENDIF}
+
+// these are purely speculative!!!!!
+{$IFDEF VER280}
+{$LIBSUFFIX '210'}
+{$ENDIF}
+
+{$IFDEF VER290}
+{$LIBSUFFIX '220'}
+{$ENDIF}
+
+requires
+  rtl;
+
+contains
+  DKLang in '..\src\DKLang.pas',
+  DKLangStorage in '..\src\DKLangStorage.pas',
+  DKL_LanguageCodes in '..\src\DKL_LanguageCodes.pas';
+
+end.
