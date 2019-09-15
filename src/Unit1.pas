@@ -1,6 +1,6 @@
 // NI FastPaste - program to quickly insert predefined text strings
 
-// Copyright (C) 2002-2018 - Nikolai Ivanov
+// Copyright (C) 2002-2019 - Nikolai Ivanov
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -63,6 +63,7 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure ToolButton1Click(Sender: TObject);
     procedure Edit1Change(Sender: TObject);
+    procedure edtKeyPress(Sender: TObject; var Key: Char);
     procedure ToolButton2Click(Sender: TObject);
     procedure ToolButton3Click(Sender: TObject);
     procedure N3Click(Sender: TObject);
@@ -104,6 +105,8 @@ const
   reccnt = 100;
   RegK = '\Software\Microsoft\Windows\CurrentVersion\Run';
   RegV = 'NI FastPaste';
+
+  c_nl = '{\n}'; // new line code
 
 var
   Form1: TForm1;
@@ -350,6 +353,12 @@ begin
   end;
 end;
 
+procedure TForm1.edtKeyPress(Sender: TObject; var Key: Char);
+begin
+  if (Sender is TEdit) and (Key = #13) then
+    (Sender as TEdit).SetSelText(c_nl);
+end;
+
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
 var
   Reg: TRegistry;
@@ -503,6 +512,7 @@ begin
     ed[i].Top := 16;
     ed[i].Width := 390;
     ed[i].OnChange := Edit1Change;
+    ed[i].OnKeyPress := edtKeyPress;
     // label
     lb[i] := TLabel.Create(gb[i]);
     lb[i].Parent := gb[i];
@@ -580,7 +590,7 @@ begin
     DKLangConstW('Spinfo1') + #13 + DKLangConstW('Spinfo2') + #13 + DKLangConstW('Spinfo3') + '   '
     + #13#13 + 'Web: https://kivlab.ru' + #13#13 +
     DKLangConstW('Spinfo4') + ':' + #13 + IniF + #13#13 +
-    'Copyright © 2002-2018 by Nikolay Ivanov. ' + #13#13 +
+    'Copyright © 2002-2019 by Nikolay Ivanov. ' + #13#13 +
     'Third Party Components:' + #13 +
     '- DKLang Localization Package (http://www.dk-soft.org/)';
   ShowMessage(Format(s, [reccnt]));
@@ -615,7 +625,7 @@ var
   vGuiInfo: TGUIThreadInfo;
   i: integer;
 begin
-  Clipboard.AsText := s;
+  Clipboard.AsText := StringReplace(s, c_nl, #13#10, [rfReplaceAll, rfIgnoreCase]);
   if length(s) < 1 then
     exit;
   if methd<3 then
